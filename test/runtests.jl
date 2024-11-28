@@ -1,5 +1,5 @@
 using RimuLegacyHamiltonians
-using Rimu: num_modes, num_components, num_particles, CompositeFS, onr, BoseFS,
+using Rimu: Rimu, num_modes, num_components, num_particles, CompositeFS, onr, BoseFS,
     near_uniform, starting_address, LOStructure, offdiagonals, IsHermitian, FermiFS, DVec,
     HubbardRealSpace, ExactDiagonalizationProblem
 using Rimu.BitStringAddresses: parse_address
