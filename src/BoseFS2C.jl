@@ -44,3 +44,6 @@ end
 function Rimu.Hamiltonians.dimension(::Type{<:BoseFS2C{NA,NB,M}}) where {NA,NB,M}
     return dimension(BoseFS{NA,M}) * dimension(BoseFS{NB,M})
 end
+
+BoseFS2C(fs::CompositeFS{2}) = BoseFS2C(fs.components...)
+Rimu.CompositeFS(fs::BoseFS2C) = CompositeFS(fs.bsa, fs.bsb)
