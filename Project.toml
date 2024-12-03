@@ -7,7 +7,7 @@ version = "0.1.0"
 Rimu = "c53c40cc-bd84-11e9-2cf4-a9fde2b9386e"
 
 [compat]
-Rimu = "0.13.1"
+Rimu = "0.13, 0.14"
 julia = "1.9"
 
 [extras]

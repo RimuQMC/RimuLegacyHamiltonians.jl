@@ -41,9 +41,48 @@ function Rimu.BitStringAddresses.time_reverse(c::BoseFS2C{NA,NA,M,S,S,N}) where 
     return  BoseFS2C{NA,NA,M,S,S,N}(c.bsb, c.bsa)
 end
 
+function Rimu.Hamiltonians.check_tr_address(addr::BoseFS2C{NA,NB,M,SA,SB,N}) where {NA,NB,M,SA,SB,N}
+    if NA ≠ NB || SA ≠ SB
+        throw(ArgumentError("Two component address with equal particle numbers required for `TimeReversalSymmetry`."))
+    end
+end
+
+function Rimu.Interfaces.diagonal_element(dmd::DensityMatrixDiagonal{0}, add::BoseFS2C)
+    return float(find_mode(add.bsa, dmd.mode).occnum + find_mode(add.bsb, dmd.mode).occnum)
+end
+function Rimu.Interfaces.diagonal_element(dmd::DensityMatrixDiagonal{1}, add::BoseFS2C)
+    comp = add.bsa
+    return float(find_mode(comp, dmd.mode).occnum)
+end
+function Rimu.Interfaces.diagonal_element(dmd::DensityMatrixDiagonal{2}, add::BoseFS2C)
+    comp = add.bsb
+    return float(find_mode(comp, dmd.mode).occnum)
+end
+
 function Rimu.Hamiltonians.dimension(::Type{<:BoseFS2C{NA,NB,M}}) where {NA,NB,M}
     return dimension(BoseFS{NA,M}) * dimension(BoseFS{NB,M})
+end
+function Rimu.Hamiltonians.number_conserving_dimension(addr::BoseFS2C)
+    return number_conserving_dimension(addr.bsa) * number_conserving_dimension(addr.bsb)
 end
 
 BoseFS2C(fs::CompositeFS{2}) = BoseFS2C(fs.components...)
 Rimu.CompositeFS(fs::BoseFS2C) = CompositeFS(fs.bsa, fs.bsb)
+
+function Rimu.Interfaces.diagonal_element(m::Momentum{0}, a::BoseFS2C)
+    Rimu.Hamiltonians._momentum((a.bsa, a.bsb), m.fold)
+end
+function Rimu.Interfaces.diagonal_element(m::Momentum{1}, a::BoseFS2C)
+    Rimu.Hamiltonians._momentum(a.bsa, m.fold)
+end
+function Rimu.Interfaces.diagonal_element(m::Momentum{2}, a::BoseFS2C)
+    Rimu.Hamiltonians._momentum(a.bsb, m.fold)
+end
+
+function Rimu.single_particle_density(add::Union{BoseFS2C}; component=0)
+    if component == 0
+        return float.(Tuple(sum(onr(add))))
+    else
+        return float.(Tuple(onr(add)[component]))
+    end
+end
