@@ -1,13 +1,14 @@
 
-import Rimu.Hamiltonians: num_offdiagonals, diagonal_element, get_offdiagonal
+import Rimu.Hamiltonians: num_offdiagonals, diagonal_element, get_offdiagonal,
+    G2MomCorrelator
 
 """
-    G2MomCorrelator(d::Int,c=:cross) <: AbstractOperator{ComplexF64}
+    G2MomCorrelator(d::Int, c=:cross) <: AbstractOperator{ComplexF64}
 
-Two-body correlation operator representing the density-density
-correlation at distance `d` of a two component system
-in a momentum-space Fock-state basis.
-It returns a `Complex` value.
+Two-body correlation operator representing the density-density correlation at distance `d`
+of a two component system in a momentum-space Fock-state basis with addresses of type
+[`BoseFS2C`](@ref). It returns a `Complex`
+value.
 
 Correlation across two components:
 ```math
@@ -46,23 +47,19 @@ and let it be the default value.
 * [`Rimu.AbstractOperator`](@extref)
 * [`Rimu.AllOverlaps`](@extref)
 """
-struct G2MomCorrelator{C} <: AbstractOperator{ComplexF64}
-    d::Int
-
-    function G2MomCorrelator(d, c=:cross)
-        if c == :first
-            return new{1}(d)
-        elseif c == :second
-            return new{2}(d)
-        elseif c == :cross
-            return new{3}(d)
-        else
-            throw(ArgumentError("Unknown instruction for G2MomCorrelator!"))
-        end
+function G2MomCorrelator(d, c)
+    if c == :first
+        return G2MomCorrelator{1}(d)
+    elseif c == :second
+        return G2MomCorrelator{2}(d)
+    elseif c == :cross
+        return G2MomCorrelator{3}(d)
+    else
+        throw(ArgumentError("Unknown instruction for G2MomCorrelator!"))
     end
 end
 
-function Rimu.Interfaces.allows_address_type(g2m::G2MomCorrelator, ::Type{A}) where {A}
+function Rimu.Interfaces.allows_address_type(g2m::G2MomCorrelator, ::Type{A}) where {A<:BoseFS2C}
     return num_modes(A) > g2m.d
 end
 
@@ -76,12 +73,6 @@ function Base.show(io::IO, g::G2MomCorrelator{C}) where {C}
     end
 end
 
-function num_offdiagonals(g::G2MomCorrelator, addr::SingleComponentFockAddress)
-    m = num_modes(addr)
-    singlies, doublies = num_singly_doubly_occupied_sites(addr)
-    return singlies * (singlies - 1) * (m - 2) + doublies * (m - 1)
-end
-
 num_offdiagonals(g::G2MomCorrelator{1},addr::BoseFS2C) = num_offdiagonals(g, addr.bsa)
 num_offdiagonals(g::G2MomCorrelator{2},addr::BoseFS2C) = num_offdiagonals(g, addr.bsb)
 
@@ -91,7 +82,6 @@ function num_offdiagonals(g::G2MomCorrelator{3}, addr::BoseFS2C)
     sb = num_occupied_modes(addr.bsb)
     return sa*(m-1)*sb
 end
-
 
 diagonal_element(g::G2MomCorrelator{1}, addr::BoseFS2C) = diagonal_element(g, addr.bsa)
 diagonal_element(g::G2MomCorrelator{2}, addr::BoseFS2C) = diagonal_element(g, addr.bsb)
@@ -104,19 +94,6 @@ function diagonal_element(g::G2MomCorrelator{3}, addr::BoseFS2C{NA,NB,M,AA,AB}) 
         iszero(onrep_b[p]) && continue
         for k in 1:M
             gd += onrep_a[k] * onrep_b[p] # b†_p b_p a†_k a_k
-        end
-    end
-    return ComplexF64(gd / M)
-end
-
-function diagonal_element(g::G2MomCorrelator, addr::SingleComponentFockAddress)
-    M = num_modes(addr)
-    onrep = onr(addr)
-    gd = 0
-    for p in 1:M
-        iszero(onrep[p]) && continue
-        for k in 1:M
-            gd += onrep[k] * onrep[p] # a†_p a_p a†_k a_k
         end
     end
     return ComplexF64(gd / M)
@@ -146,15 +123,4 @@ function get_offdiagonal(
     )
     gd = exp(-im * g.d * Δp * 2π / m) * gamma
     return A(new_bsa, new_bsb), ComplexF64(gd / m)
-end
-
-function get_offdiagonal(
-    g::G2MomCorrelator,
-    addr::A,
-    chosen,
-)::Tuple{A,ComplexF64} where {A<:SingleComponentFockAddress}
-    M = num_modes(addr)
-    new_add, gamma, Δp = momentum_transfer_excitation(addr, chosen, OccupiedModeMap(addr))
-    gd = exp(-im * g.d * Δp * 2π / M) * gamma
-    return new_add, ComplexF64(gd / M)
 end

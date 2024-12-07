@@ -1,7 +1,7 @@
 using RimuLegacyHamiltonians
 using Rimu
 using Rimu.BitStringAddresses: parse_address
-# using Rimu.InterfaceTests: test_operator_interface, test_hamiltonian_interface
+using Rimu.InterfaceTests # requires Rimu v0.14.0
 using Test
 
 function exact_energy(ham)
@@ -85,6 +85,9 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         Ĥ2cReal = BoseHubbardReal1D2C(aIni2cReal; ua=6.0, ub=6.0, ta=1.0, tb=1.0, v=6.0)
         hamA = HubbardReal1D(BoseFS((1, 1, 1, 1)); u=6.0, t=1.0)
         hamB = HubbardReal1D(BoseFS((1, 1, 1, 1)); u=6.0)
+
+        test_hamiltonian_interface(Ĥ2cReal)
+
         @test hamA == Ĥ2cReal.ha
         @test hamB == Ĥ2cReal.hb
         @test num_offdiagonals(Ĥ2cReal, aIni2cReal) == 16
@@ -100,6 +103,9 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
 
         aIni2cMom = BoseFS2C(BoseFS((0, 4, 0, 0)), BoseFS((0, 4, 0, 0))) # momentum space two-component
         Ĥ2cMom = BoseHubbardMom1D2C(aIni2cMom; ua=6.0, ub=6.0, ta=1.0, tb=1.0, v=6.0)
+
+        test_hamiltonian_interface(Ĥ2cMom)
+
         @test num_offdiagonals(Ĥ2cMom, aIni2cMom) == 9
         @test dimension(Ĥ2cMom) == 1225
         @test dimension(Float64, Ĥ2cMom) == 1225.0
@@ -116,6 +122,16 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         @test eig2cReal.values[1] ≈ eig2cMom.values[1]
     end
 
+    @testset "2C Hamiltonian interface and structure" begin
+        fs2c = BoseFS2C((1, 0, 1), (0, 1, 0))
+        hr = BoseHubbardReal1D2C(fs2c)
+        test_hamiltonian_interface(hr)
+        test_hamiltonian_structure(hr)
+
+        hm = BoseHubbardMom1D2C(fs2c)
+        test_hamiltonian_interface(hm)
+        test_hamiltonian_structure(hm)
+    end
 
     @testset "2C model properties" begin
         flip(b) = BoseFS2C(b.bsb, b.bsa)
@@ -236,6 +252,7 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         @test diagonal_element(g0s, bfs1) == 4 / 3
         @test diagonal_element(g0s, bfs2) == 1 / 3
         test_operator_interface(G2MomCorrelator(3), BoseFS(1, 2, 0, 3, 0, 4, 0, 1))
+        test_operator_interface(G2MomCorrelator(2), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
     end
 
 end
