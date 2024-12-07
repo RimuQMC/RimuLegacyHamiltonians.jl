@@ -1,5 +1,7 @@
 # RimuLegacyHamiltonians
 
+[![Coverage Status](https://coveralls.io/repos/github/RimuQMC/RimuLegacyHamiltonians.jl/badge.svg?branch=master)](https://coveralls.io/github/RimuQMC/RimuLegacyHamiltonians.jl?branch=master)
+
 This repository contains legacy Hamiltonians for Rimu.jl. These Hamiltonians are already or will eventually be superseeded by more general Hamiltonian types.
 
 ### Installing RimuLegacyHamiltonians
