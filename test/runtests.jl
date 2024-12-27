@@ -253,6 +253,9 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         @test diagonal_element(g0s, bfs2) == 1 / 3
         test_operator_interface(G2MomCorrelator(3), BoseFS(1, 2, 0, 3, 0, 4, 0, 1))
         test_operator_interface(G2MomCorrelator(2), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
+        test_operator_interface(G2MomCorrelator(2, :first), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
+        test_operator_interface(G2MomCorrelator(2, :second), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
+        @test G2MomCorrelator(3, :cross) == G2MomCorrelator(3)
     end
 
 end

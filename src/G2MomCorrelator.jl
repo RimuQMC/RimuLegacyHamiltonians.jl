@@ -65,11 +65,11 @@ end
 
 function Base.show(io::IO, g::G2MomCorrelator{C}) where {C}
     if C == 1
-        print(io, "G2MomCorrelator($(g.d),:first)")
+        print(io, "G2MomCorrelator($(g.d), :first)")
     elseif C == 2
-        print(io, "G2MomCorrelator($(g.d),:second)")
-    elseif C == 3
-        print(io, "G2MomCorrelator($(g.d),:cross)")
+        print(io, "G2MomCorrelator($(g.d), :second)")
+    else # C == 3 is the default value and handled in Rimu.jl
+        @error "G2MomCorrelator{$C} is not implemented!"
     end
 end
 
