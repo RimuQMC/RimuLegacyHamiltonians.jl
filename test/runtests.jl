@@ -76,7 +76,7 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
             @test single_particle_density(address) == (1, 3, 3)
             @test single_particle_density(address; component=1) == (1, 2, 3)
             @test single_particle_density(address; component=2) == (0, 1, 0)
-            @test single_particle_density(DVec(address => 1); component=2) == (0, 7, 0)
+            @test single_particle_density(DVec(address => 1); component=2) == (0, 1, 0)
         end
 
     end
