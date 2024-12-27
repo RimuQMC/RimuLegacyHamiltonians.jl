@@ -256,6 +256,10 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         test_operator_interface(G2MomCorrelator(2, :first), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
         test_operator_interface(G2MomCorrelator(2, :second), BoseFS2C(BoseFS{1,3}((0, 1, 0)), BoseFS{2,3}((1, 0, 1))))
         @test G2MomCorrelator(3, :cross) == G2MomCorrelator(3)
+        # Check that the result of show can be pasted into the REPL
+        @test eval(Meta.parse(repr(2MomCorrelator(2, :first)))) == 2MomCorrelator(2, :first)
+        @test eval(Meta.parse(repr(2MomCorrelator(2, :second)))) == 2MomCorrelator(2, :second)
+        @test_throws ArgumentError G2MomCorrelator(3, :unknown)
     end
 
 end
