@@ -90,12 +90,12 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
 
         @test hamA == Ĥ2cReal.ha
         @test hamB == Ĥ2cReal.hb
-        @test num_offdiagonals(Ĥ2cReal, aIni2cReal) == 16
-        @test num_offdiagonals(Ĥ2cReal, aIni2cReal) == num_offdiagonals(Ĥ2cReal.ha, aIni2cReal.bsa) + num_offdiagonals(Ĥ2cReal.hb, aIni2cReal.bsb)
+        @test num_offdiagonals(operator_column(Ĥ2cReal, aIni2cReal)) == 16
+        @test 16 == num_offdiagonals(Ĥ2cReal.ha, aIni2cReal.bsa) + num_offdiagonals(Ĥ2cReal.hb, aIni2cReal.bsb)
         @test dimension(Ĥ2cReal) == 1225
         @test dimension(Float64, Ĥ2cReal) == 1225.0
 
-        hp2c = offdiagonals(Ĥ2cReal, aIni2cReal)
+        hp2c = offdiagonals(operator_column(Ĥ2cReal, aIni2cReal))
         @test length(hp2c) == 16
         @test hp2c[1][1] == BoseFS2C(BoseFS((0, 2, 1, 1)), BoseFS((1, 1, 1, 1)))
         @test hp2c[1][2] ≈ -1.4142135623730951
@@ -138,28 +138,26 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
         addr1 = near_uniform(BoseFS2C{1,100,20})
         addr2 = near_uniform(BoseFS2C{100,1,20})
 
-        for Hamiltonian in (BoseHubbardReal1D2C, BoseHubbardMom1D2C)
-            @testset "$Hamiltonian" begin
-                H1 = BoseHubbardReal1D2C(addr1; ta=1.0, tb=2.0, ua=0.5, ub=0.7, v=0.2)
-                H2 = BoseHubbardReal1D2C(addr2; ta=2.0, tb=1.0, ua=0.7, ub=0.5, v=0.2)
-                @test starting_address(H1) == addr1
-                @test LOStructure(H1) == IsHermitian()
+        @testset "Hamiltonian" begin
+            H1 = BoseHubbardReal1D2C(addr1; ta=1.0, tb=2.0, ua=0.5, ub=0.7, v=0.2)
+            H2 = BoseHubbardReal1D2C(addr2; ta=2.0, tb=1.0, ua=0.7, ub=0.5, v=0.2)
+            @test starting_address(H1) == addr1
+            @test LOStructure(H1) == IsHermitian()
 
-                hops1 = collect(offdiagonals(H1, addr1))
-                hops2 = collect(offdiagonals(H2, addr2))
-                sort!(hops1, by=a -> first(a).bsa)
-                sort!(hops2, by=a -> first(a).bsb)
+            hops1 = collect(offdiagonals(operator_column(H1, addr1)))
+            hops2 = collect(offdiagonals(operator_column(H2, addr2)))
+            sort!(hops1, by=a -> first(a).bsa)
+            sort!(hops2, by=a -> first(a).bsb)
 
-                addrs1 = first.(hops1)
-                addrs2 = flip.(first.(hops2))
-                values1 = last.(hops1)
-                values2 = last.(hops1)
-                @test addrs1 == addrs2
-                @test values1 == values2
+            addrs1 = first.(hops1)
+            addrs2 = flip.(first.(hops2))
+            values1 = last.(hops1)
+            values2 = last.(hops1)
+            @test addrs1 == addrs2
+            @test values1 == values2
 
-                @test eval(Meta.parse(repr(H1))) == H1
-                @test eval(Meta.parse(repr(H2))) == H2
-            end
+            @test eval(Meta.parse(repr(H1))) == H1
+            @test eval(Meta.parse(repr(H2))) == H2
         end
     end
     @testset "1D Bosons (2-component)" begin

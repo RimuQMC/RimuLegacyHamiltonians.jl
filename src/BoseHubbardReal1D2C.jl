@@ -48,6 +48,20 @@ function Rimu.starting_address(h::BoseHubbardReal1D2C)
     return BoseFS2C(starting_address(h.ha), starting_address(h.hb))
 end
 
+struct BoseHubbardReal1D2CColumn{
+    A,T,O<:BoseHubbardReal1D2C{T}
+} <: Rimu.AbstractOperatorColumn{A,T,O}
+    address::A
+    hamiltonian::O
+    diagonal_element::T
+end
+
+function Rimu.operator_column(h::BoseHubbardReal1D2C, address::BoseFS2C)
+    diagonal_element = Rimu.diagonal_element(h, address)
+    return BoseHubbardReal1D2CColumn(address, h, diagonal_element)
+end
+
+
 Rimu.LOStructure(::Type{<:BoseHubbardReal1D2C{<:Real}}) = IsHermitian()
 
 Base.getproperty(h::BoseHubbardReal1D2C, s::Symbol) = getproperty(h, Val(s))
@@ -56,8 +70,16 @@ Base.getproperty(h::BoseHubbardReal1D2C, ::Val{:hb}) = getfield(h, :hb)
 Base.getproperty(h::BoseHubbardReal1D2C{<:Any,<:Any,<:Any,V}, ::Val{:v}) where {V} = V
 
 # number of excitations that can be made
-function Rimu.num_offdiagonals(::BoseHubbardReal1D2C, address)
+function Rimu.num_offdiagonals(c::BoseHubbardReal1D2CColumn)
+    address = starting_address(c)
     return 2*(num_occupied_modes(address.bsa) + num_occupied_modes(address.bsb))
+end
+function Rimu.num_offdiagonals(h::BoseHubbardReal1D2C)
+    address = starting_address(h)
+    num_particles_a = Rimu.num_particles(address.bsa)
+    num_particles_b = Rimu.num_particles(address.bsb)
+    return 2 * (min(num_particles_a, num_modes(h)) +
+                min(num_particles_b, num_modes(h)))
 end
 
 """
@@ -79,27 +101,29 @@ end
 
 function Rimu.diagonal_element(ham::BoseHubbardReal1D2C, address::BoseFS2C)
     return (
-        diagonal_element(ham.ha, address.bsa) +
-        diagonal_element(ham.hb, address.bsb) +
+        diagonal_element(ham.ha, address.bsa) + # still makes use of the old interface
+        diagonal_element(ham.hb, address.bsb) + # old interface
         ham.v * bose_hubbard_2c_interaction(address)
     )
 end
+Rimu.diagonal_element(c::BoseHubbardReal1D2CColumn) = c.diagonal_element
 
-function Rimu.get_offdiagonal(ham::BoseHubbardReal1D2C, address, chosen)
-    nhops = num_offdiagonals(ham,address)
-    nhops_a = 2 * num_occupied_modes(address.bsa)
-    if chosen ≤ nhops_a
-        naddress_from_bsa, onproduct = hopnextneighbour(address.bsa, chosen)
-        elem = - ham.ha.t * onproduct
-        return BoseFS2C(naddress_from_bsa,address.bsb), elem
-    else
-        chosen -= nhops_a
-        naddress_from_bsb, onproduct = hopnextneighbour(address.bsb, chosen)
-        elem = -ham.hb.t * onproduct
-        return BoseFS2C(address.bsa,naddress_from_bsb), elem
-    end
-    # return new address and matrix element
-end
+
+# function Rimu.get_offdiagonal(ham::BoseHubbardReal1D2C, address, chosen)
+#     nhops = num_offdiagonals(ham,address)
+#     nhops_a = 2 * num_occupied_modes(address.bsa)
+#     if chosen ≤ nhops_a
+#         naddress_from_bsa, onproduct = hopnextneighbour(address.bsa, chosen)
+#         elem = - ham.ha.t * onproduct
+#         return BoseFS2C(naddress_from_bsa,address.bsb), elem
+#     else
+#         chosen -= nhops_a
+#         naddress_from_bsb, onproduct = hopnextneighbour(address.bsb, chosen)
+#         elem = -ham.hb.t * onproduct
+#         return BoseFS2C(address.bsa,naddress_from_bsb), elem
+#     end
+#     # return new address and matrix element
+# end
 
 struct OffdiagonalsBoseReal1D2C{
     A<:BoseFS2C,T,H<:TwoComponentHamiltonian{T}
@@ -110,9 +134,11 @@ struct OffdiagonalsBoseReal1D2C{
     num_hops_a::Int
 end
 
-function Rimu.offdiagonals(h::BoseHubbardReal1D2C, a::BoseFS2C)
-    hops_a = num_offdiagonals(h.ha, a.bsa)
-    hops_b = num_offdiagonals(h.hb, a.bsb)
+function Rimu.offdiagonals(c::BoseHubbardReal1D2CColumn)
+    h = c.hamiltonian
+    a = c.address
+    hops_a = num_offdiagonals(h.ha, a.bsa) # old interface
+    hops_b = num_offdiagonals(h.hb, a.bsb) # old interface
     length = hops_a + hops_b
 
     return OffdiagonalsBoseReal1D2C(h, a, length, hops_a)
@@ -122,10 +148,12 @@ function Base.getindex(s::OffdiagonalsBoseReal1D2C{A,T}, i)::Tuple{A,T} where {A
     @boundscheck 1 ≤ i ≤ s.length || throw(BoundsError(s, i))
     if i ≤ s.num_hops_a
         new_a, matrix_element = get_offdiagonal(s.hamiltonian.ha, s.address.bsa, i)
+        # old interface
         new_add = A(new_a, s.address.bsb)
     else
         i -= s.num_hops_a
         new_b, matrix_element = get_offdiagonal(s.hamiltonian.hb, s.address.bsb, i)
+        # old interface
         new_add = A(s.address.bsa, new_b)
     end
     return new_add, matrix_element
