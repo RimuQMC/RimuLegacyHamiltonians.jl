@@ -14,6 +14,9 @@ using Rimu.Hamiltonians: Hamiltonians, dimension, HubbardMom1D, starting_address
 export BoseFS2C
 export BoseHubbardMom1D2C, BoseHubbardReal1D2C, G2MomCorrelator
 
+import Rimu.Interfaces: operator_column, parent_operator, starting_address,
+    random_offdiagonal
+
 include("BoseFS2C.jl")
 include("BoseHubbardMom1D2C.jl")
 include("BoseHubbardReal1D2C.jl")

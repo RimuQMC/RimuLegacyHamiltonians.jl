@@ -56,9 +56,16 @@ struct BoseHubbardReal1D2CColumn{
     diagonal_element::T
 end
 
-function Rimu.operator_column(h::BoseHubbardReal1D2C, address::BoseFS2C)
+function operator_column(h::BoseHubbardReal1D2C, address::BoseFS2C)
     diagonal_element = Rimu.diagonal_element(h, address)
     return BoseHubbardReal1D2CColumn(address, h, diagonal_element)
+end
+
+function parent_operator(c::BoseHubbardReal1D2CColumn)
+    return c.hamiltonian
+end
+function starting_address(c::BoseHubbardReal1D2CColumn)
+    return c.address
 end
 
 
@@ -160,3 +167,14 @@ function Base.getindex(s::OffdiagonalsBoseReal1D2C{A,T}, i)::Tuple{A,T} where {A
 end
 
 Base.size(s::OffdiagonalsBoseReal1D2C) = (s.length,)
+
+function random_offdiagonal(c::BoseHubbardReal1D2CColumn)
+    return random_from_offdiagonal(offdiagonals(c))
+end
+
+function random_from_offdiagonal(offdiags::AbstractOffdiagonals)
+    nl = length(offdiags) # check how many sites we could reach
+    chosen = rand(1:nl) # choose one of them
+    naddress, melem = offdiags[chosen]
+    return naddress, 1.0 / nl, melem
+end
