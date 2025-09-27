@@ -125,12 +125,14 @@ using RimuLegacyHamiltonians: bose_hubbard_2c_interaction
     @testset "2C Hamiltonian interface and structure" begin
         fs2c = BoseFS2C((1, 0, 1), (0, 1, 0))
         hr = BoseHubbardReal1D2C(fs2c)
-        test_hamiltonian_interface(hr)
-        test_hamiltonian_structure(hr)
-
         hm = BoseHubbardMom1D2C(fs2c)
-        test_hamiltonian_interface(hm)
-        test_hamiltonian_structure(hm)
+        ghr = GutzwillerSampling(hr; g=0.8) # test compatibility with ModifiedHamiltonian
+        ghm = GutzwillerSampling(hm; g=0.8)
+
+        for h in (hr, hm, ghr, ghm)
+            test_hamiltonian_interface(h)
+            test_hamiltonian_structure(h)
+        end
     end
 
     @testset "2C model properties" begin
